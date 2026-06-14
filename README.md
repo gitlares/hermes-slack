@@ -38,6 +38,18 @@ git clone git@github.com:gitlares/hermes-slack.git
 cd hermes-slack
 ```
 
+Run the guided installer:
+
+```bash
+python setup.py
+```
+
+The installer generates a Slack manifest, waits for you to create/install the Slack app, asks for the Slack tokens, resolves your owner user ID and channels, configures Hermes, installs the watcher plugin, applies supported runtime patches, and offers to restart `hermes-gateway`.
+
+If you prefer manual setup, use the steps below.
+
+## Manual Setup
+
 Generate a Slack manifest:
 
 ```bash
@@ -86,6 +98,24 @@ Backfill recent Slack history:
 ```text
 Ask Hermes to run slack_watcher_backfill for the configured channels.
 ```
+
+## What The Installer Configures
+
+The installer writes these local Hermes environment values:
+
+- `SLACK_BOT_TOKEN`
+- `SLACK_APP_TOKEN`
+- `SLACK_ALLOWED_USERS`
+- `SLACK_HOME_CHANNEL`
+- `SLACK_HOME_CHANNEL_NAME`
+- `SLACK_FREE_RESPONSE_CHANNELS`
+- `SLACK_REQUIRE_MENTION=true`
+- `SLACK_STRICT_MENTION=false`
+- `SLACK_ALLOW_BOTS=false`
+- `SLACK_WATCH_CHANNELS`
+- `SLACK_WATCHER_DB_PATH`
+
+It does not commit, upload, or transmit tokens anywhere except Slack API calls needed to resolve user/channel names.
 
 ## Slack App Requirements
 

@@ -17,6 +17,14 @@ Set up Hermes as a Slack listener that can supervise selected channels without s
 
 ## Workflow
 
+Prefer the repository-level guided installer when available:
+
+```bash
+python setup.py
+```
+
+Use the manual workflow below when installing from the skill folder only, patching an existing deployment, or debugging.
+
 1. Create or update the Slack App.
 2. Install the app to the workspace and collect tokens.
 3. Resolve owner `user_id`, home channel ID, and monitored channel IDs.
