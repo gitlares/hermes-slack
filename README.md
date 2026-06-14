@@ -15,6 +15,7 @@ What it does:
 - send owner-only private Slack responses in the origin channel;
 - copy answers to a private home channel so the conversation can continue;
 - store monitored-channel history in local SQLite for summaries and search;
+- resolve Slack user IDs to human names when the bot token has `users:read`;
 - work without requiring Mem0, Obsidian, vector DBs, or any specific memory provider.
 
 ## Requirements

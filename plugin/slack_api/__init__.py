@@ -10,6 +10,8 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+_USER_CACHE: dict[str, str] = {}
+
 
 def _env(name: str) -> str:
     value = os.environ.get(name, "")
@@ -106,13 +108,51 @@ def _has_table(conn: sqlite3.Connection) -> bool:
     return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='slack_messages'").fetchone() is not None
 
 
+def _looks_like_user_id(value: str) -> bool:
+    return bool(value) and value[:1] in {"U", "W"} and len(value) >= 8
+
+
+def _resolve_user_name(user_id: str) -> str:
+    user_id = (user_id or "").strip()
+    if not _looks_like_user_id(user_id):
+        return user_id
+    cached = _USER_CACHE.get(user_id)
+    if cached:
+        return cached
+    res = _api("users.info", {"user": user_id})
+    if not res.get("ok"):
+        return user_id
+    user = res.get("user") or {}
+    profile = user.get("profile") or {}
+    name = (
+        profile.get("display_name")
+        or profile.get("real_name")
+        or user.get("real_name")
+        or user.get("name")
+        or user_id
+    )
+    name = str(name).strip() or user_id
+    _USER_CACHE[user_id] = name
+    return name
+
+
+def _display_user(user_id: str, user_name: str) -> str:
+    user_id = (user_id or "").strip()
+    user_name = (user_name or "").strip()
+    if user_name and user_name != user_id:
+        return user_name
+    if _looks_like_user_id(user_id):
+        return _resolve_user_name(user_id)
+    return user_name or user_id
+
+
 def _row(row: sqlite3.Row) -> dict[str, Any]:
     ts = str(row["ts"] or "")
     return {
         "channel_id": row["channel_id"],
         "channel_name": row["channel_name"] or row["channel_id"],
         "user_id": row["user_id"] or "",
-        "user_name": row["user_name"] or row["user_id"] or "",
+        "user_name": _display_user(str(row["user_id"] or ""), str(row["user_name"] or "")),
         "ts": ts,
         "time": _fmt(ts),
         "thread_ts": row["thread_ts"] or "",
@@ -177,7 +217,17 @@ def _channel_history(args: dict[str, Any], **_: Any) -> str:
     res = _api("conversations.history", {"channel": channel, "limit": max(1, min(int(args.get("limit") or 20), 100))})
     if not res.get("ok"):
         return json.dumps(res, ensure_ascii=False)
-    messages = [{"ts": m.get("ts"), "time": _fmt(str(m.get("ts", ""))), "user": m.get("user") or m.get("bot_id") or "", "thread_ts": m.get("thread_ts", ""), "text": _clean(m.get("text", ""))} for m in res.get("messages", [])]
+    messages = []
+    for m in res.get("messages", []):
+        user_id = str(m.get("user") or m.get("bot_id") or "")
+        messages.append({
+            "ts": m.get("ts"),
+            "time": _fmt(str(m.get("ts", ""))),
+            "user_id": user_id,
+            "user": _display_user(user_id, ""),
+            "thread_ts": m.get("thread_ts", ""),
+            "text": _clean(m.get("text", "")),
+        })
     return json.dumps({"ok": True, "channel": channel, "messages": messages}, ensure_ascii=False)
 
 
@@ -197,7 +247,8 @@ def _search_messages(args: dict[str, Any], **_: Any) -> str:
             continue
         for m in res.get("messages", []):
             if query in (m.get("text", "").lower()):
-                results.append({"channel_id": ch["id"], "channel_name": ch.get("name"), "ts": m.get("ts"), "time": _fmt(str(m.get("ts", ""))), "user": m.get("user") or m.get("bot_id") or "", "text": _clean(m.get("text", ""))})
+                user_id = str(m.get("user") or m.get("bot_id") or "")
+                results.append({"channel_id": ch["id"], "channel_name": ch.get("name"), "ts": m.get("ts"), "time": _fmt(str(m.get("ts", ""))), "user_id": user_id, "user": _display_user(user_id, ""), "text": _clean(m.get("text", ""))})
                 if len(results) >= limit:
                     return json.dumps({"ok": True, "results": results}, ensure_ascii=False)
     return json.dumps({"ok": True, "results": results}, ensure_ascii=False)
@@ -279,7 +330,9 @@ def _watcher_backfill(args: dict[str, Any], **_: Any) -> str:
                 if not ts:
                     continue
                 scanned += 1
-                cur = conn.execute("INSERT OR IGNORE INTO slack_messages (team_id, channel_id, channel_name, user_id, user_name, ts, thread_ts, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", ("", channel, name, msg.get("user") or msg.get("bot_id") or "", msg.get("user") or msg.get("bot_id") or "", ts, msg.get("thread_ts") or "", msg.get("text", ""), time.time()))
+                user_id = str(msg.get("user") or msg.get("bot_id") or "")
+                user_name = _display_user(user_id, "")
+                cur = conn.execute("INSERT OR IGNORE INTO slack_messages (team_id, channel_id, channel_name, user_id, user_name, ts, thread_ts, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", ("", channel, name, user_id, user_name, ts, msg.get("thread_ts") or "", msg.get("text", ""), time.time()))
                 inserted += int(cur.rowcount or 0)
     return json.dumps({"ok": True, "channels": channels, "scanned": scanned, "inserted": inserted, "errors": errors, "db_path": _db_path()}, ensure_ascii=False)
 
