@@ -100,3 +100,7 @@ Use `slack_watcher_prune` to clean old rows and optionally cap rows per channel.
 Never commit `.env`, Slack tokens, SQLite databases, or local Hermes configs.
 
 The installed skill does not contain token-handling scripts. External helper tools operate locally and should be reviewed before use.
+
+## License
+
+Released under the MIT License.
