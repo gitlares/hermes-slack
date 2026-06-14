@@ -1,8 +1,10 @@
 # Hermes Slack Watcher
 
-Community Hermes skill plus optional helper tools for connecting [Hermes Agent](https://github.com/NousResearch/hermes-agent) to Slack as a private, user-gated channel watcher.
+A small toolkit for using [Hermes Agent](https://github.com/NousResearch/hermes-agent) as a private Slack watcher under one owner's control.
 
-It lets Hermes:
+It is meant for a simple setup: Hermes can follow selected channels, keep history in SQLite, and answer only the person who owns the installation.
+
+What it does:
 
 - listen to selected Slack channels where the bot is invited;
 - only obey one configured owner user;
@@ -12,7 +14,7 @@ It lets Hermes:
 - store monitored-channel history in local SQLite for summaries and search;
 - work without requiring Mem0, Obsidian, vector DBs, or any specific memory provider.
 
-## Install The Skill
+## Install
 
 Install through Hermes' standard skill installer:
 
@@ -20,7 +22,7 @@ Install through Hermes' standard skill installer:
 hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
 ```
 
-This installs the safe skill bundle only. Hermes community skill scanning blocks bundles that contain token-handling scripts or privileged restart commands, so automation helpers live outside the installed skill.
+This installs only the safe skill bundle. Hermes blocks community skills that handle secrets or local runtime changes, so the setup helpers stay outside the installed skill.
 
 After installing, ask Hermes:
 
@@ -28,11 +30,11 @@ After installing, ask Hermes:
 Use slack-hermes-watcher to configure Slack supervision.
 ```
 
-The skill will guide the full process: Slack App creation, owner user ID, private home channel, monitored channels, watcher tools, SQLite history, memory policy, validation, and troubleshooting.
+The skill walks through the setup: Slack app, owner user ID, private home channel, monitored channels, watcher tools, SQLite history, memory policy, validation, and troubleshooting.
 
-## Optional Helper Tools
+## Optional helper tools
 
-If you want guided automation after installing the skill, clone this repo and run the external helper:
+If you want a guided local setup after installing the skill, clone this repo and run the helper:
 
 ```bash
 git clone git@github.com:gitlares/hermes-slack.git
@@ -40,11 +42,11 @@ cd hermes-slack
 python tools/setup_wizard.py
 ```
 
-The helper generates a Slack manifest, asks for tokens locally, resolves user/channel names, configures Hermes, installs the companion plugin, applies supported runtime patches, validates imports, and offers to restart `hermes-gateway`.
+The helper generates a Slack manifest, asks for tokens locally, resolves user and channel names, configures Hermes, installs the companion plugin, applies the supported runtime patches, validates imports, and offers to restart `hermes-gateway`.
 
-The helper is intentionally outside the installed skill bundle because it handles secrets and local runtime changes.
+It stays outside the installed skill bundle because it touches secrets and local runtime state.
 
-## Repository Layout
+## Layout
 
 ```text
 skill/slack-hermes-watcher/
@@ -68,7 +70,7 @@ docs/
   hermes-runtime-behavior.md
 ```
 
-## Companion Plugin Tools
+## Companion plugin tools
 
 The optional `slack_api` Hermes plugin exposes:
 
@@ -83,7 +85,7 @@ The optional `slack_api` Hermes plugin exposes:
 
 ## Retention
 
-The watcher stores Slack history in SQLite, so prompt context does not fill up, but disk can still grow over time.
+The watcher stores Slack history in SQLite, so prompt context stays clean, but the local database can still grow over time.
 
 Use `SLACK_WATCH_RETENTION_DAYS` to define default retention, for example:
 
@@ -93,7 +95,7 @@ SLACK_WATCH_RETENTION_DAYS=30
 
 Use `slack_watcher_prune` to clean old rows and optionally cap rows per channel.
 
-## Security Notes
+## Security notes
 
 Never commit `.env`, Slack tokens, SQLite databases, or local Hermes configs.
 
