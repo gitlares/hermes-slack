@@ -17,6 +17,39 @@ What it does:
 - store monitored-channel history in local SQLite for summaries and search;
 - work without requiring Mem0, Obsidian, vector DBs, or any specific memory provider.
 
+## Requirements
+
+- Hermes Agent already installed
+- Slack workspace where you can create or install apps
+- Slack bot token
+- Slack app token for Socket Mode
+- Python 3 if you want to use the optional local helper tools
+
+## Quick start
+
+1. Install the skill:
+
+```bash
+hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+```
+
+2. In Hermes, ask:
+
+```text
+Use slack-hermes-watcher to configure Slack supervision.
+```
+
+3. Follow the setup flow:
+
+- create the Slack app;
+- enable Socket Mode;
+- install the app to your workspace;
+- provide the bot token and app token;
+- choose the owner Slack user ID;
+- choose the private home channel;
+- choose monitored channels;
+- verify watcher search and summaries.
+
 ## Install
 
 Install through Hermes' standard skill installer:
@@ -85,6 +118,36 @@ The optional `slack_api` Hermes plugin exposes:
 - `slack_watcher_search`
 - `slack_watcher_backfill`
 - `slack_watcher_prune`
+
+## What is verified already
+
+- the skill installs through Hermes' normal skill installer;
+- the installed bundle is accepted as safe;
+- the watcher plugin exposes the expected Slack and SQLite tools;
+- the repo includes helper tooling for local setup and runtime patching;
+- the prune workflow is available so the SQLite watcher does not grow forever.
+
+## Current limits
+
+- a true clean-room test from zero on a brand-new Hermes machine is still worth doing;
+- Slack setup still depends on valid app configuration and tokens from the user;
+- the optional helper path uses local scripts by design, because Hermes blocks risky community skill bundles that handle secrets or patch runtime automatically.
+
+## Visible commands
+
+Main install command:
+
+```bash
+hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+```
+
+Optional guided helper:
+
+```bash
+git clone git@github.com:gitlares/hermes-slack.git
+cd hermes-slack
+python tools/setup_wizard.py
+```
 
 ## Retention
 
