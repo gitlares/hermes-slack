@@ -11,5 +11,6 @@ provides_tools:
   - slack_watcher_recent
   - slack_watcher_search
   - slack_watcher_backfill
+  - slack_watcher_prune
 requires_env:
   - SLACK_BOT_TOKEN

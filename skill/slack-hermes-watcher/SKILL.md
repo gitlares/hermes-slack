@@ -87,6 +87,7 @@ Collect these values:
 - Private Hermes home channel ID.
 - Monitored channel IDs.
 - Local SQLite watcher database location.
+- Retention policy for watcher rows, for example `SLACK_WATCH_RETENTION_DAYS=30`.
 
 Use Slack API lookups or Slack UI instructions to help the user find IDs. Avoid hardcoding personal IDs in reusable documentation.
 
@@ -112,12 +113,15 @@ The companion Slack watcher plugin should expose:
 - `slack_watcher_recent`
 - `slack_watcher_search`
 - `slack_watcher_backfill`
+- `slack_watcher_prune`
 
 Use watcher tools for monitored-channel summaries because they read SQLite history without filling the prompt context.
 
 ## Memory Policy
 
 SQLite is the source of truth for monitored Slack history.
+
+Do not keep unbounded history by default. Recommend a retention window such as 30 or 60 days and use a prune operation periodically.
 
 Do not put every Slack message into long-term memory. Promote only durable facts when the owner asks to remember them or confirms an extracted item is important.
 

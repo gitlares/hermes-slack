@@ -79,6 +79,19 @@ The optional `slack_api` Hermes plugin exposes:
 - `slack_watcher_recent`
 - `slack_watcher_search`
 - `slack_watcher_backfill`
+- `slack_watcher_prune`
+
+## Retention
+
+The watcher stores Slack history in SQLite, so prompt context does not fill up, but disk can still grow over time.
+
+Use `SLACK_WATCH_RETENTION_DAYS` to define default retention, for example:
+
+```bash
+SLACK_WATCH_RETENTION_DAYS=30
+```
+
+Use `slack_watcher_prune` to clean old rows and optionally cap rows per channel.
 
 ## Security Notes
 

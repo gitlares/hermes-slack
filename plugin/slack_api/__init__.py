@@ -61,6 +61,16 @@ def _watch_channels() -> list[str]:
     return [x.strip() for x in _env("SLACK_WATCH_CHANNELS").split(",") if x.strip()]
 
 
+def _retention_days() -> int:
+    raw = (_env("SLACK_WATCH_RETENTION_DAYS") or "").strip()
+    if not raw:
+        return 30
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 30
+
+
 def _conn() -> sqlite3.Connection:
     path = _db_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -108,6 +118,20 @@ def _row(row: sqlite3.Row) -> dict[str, Any]:
         "thread_ts": row["thread_ts"] or "",
         "text": _clean(row["text"] or "", 2200),
     }
+
+
+def _watcher_total_rows(conn: sqlite3.Connection) -> int:
+    if not _has_table(conn):
+        return 0
+    row = conn.execute("SELECT COUNT(*) AS count FROM slack_messages").fetchone()
+    return int(row["count"] if row else 0)
+
+
+def _watcher_db_size_bytes() -> int:
+    try:
+        return os.path.getsize(_db_path())
+    except OSError:
+        return 0
 
 
 def _types(pub: bool, priv: bool, dms: bool) -> str:
@@ -260,6 +284,103 @@ def _watcher_backfill(args: dict[str, Any], **_: Any) -> str:
     return json.dumps({"ok": True, "channels": channels, "scanned": scanned, "inserted": inserted, "errors": errors, "db_path": _db_path()}, ensure_ascii=False)
 
 
+def _watcher_prune(args: dict[str, Any], **_: Any) -> str:
+    older_than_days = max(1, int(args.get("older_than_days") or _retention_days()))
+    max_rows_per_channel_raw = args.get("max_rows_per_channel")
+    max_rows_per_channel = None
+    if max_rows_per_channel_raw not in (None, ""):
+        max_rows_per_channel = max(1, int(max_rows_per_channel_raw))
+    dry_run = bool(args.get("dry_run", False))
+    vacuum = bool(args.get("vacuum", True))
+
+    if not os.path.exists(_db_path()):
+        return json.dumps(
+            {
+                "ok": True,
+                "db_path": _db_path(),
+                "deleted": 0,
+                "remaining": 0,
+                "size_bytes_before": 0,
+                "size_bytes_after": 0,
+            },
+            ensure_ascii=False,
+        )
+
+    cutoff = time.time() - (older_than_days * 86400)
+    with _conn() as conn:
+        if not _has_table(conn):
+            return json.dumps(
+                {
+                    "ok": True,
+                    "db_path": _db_path(),
+                    "deleted": 0,
+                    "remaining": 0,
+                    "size_bytes_before": _watcher_db_size_bytes(),
+                    "size_bytes_after": _watcher_db_size_bytes(),
+                },
+                ensure_ascii=False,
+            )
+
+        before_rows = _watcher_total_rows(conn)
+        size_before = _watcher_db_size_bytes()
+        deleted = 0
+
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM slack_messages WHERE created_at < ?",
+            (cutoff,),
+        ).fetchone()
+        age_deleted = int(row["count"] if row else 0)
+        deleted += age_deleted
+        if not dry_run and age_deleted:
+            conn.execute("DELETE FROM slack_messages WHERE created_at < ?", (cutoff,))
+
+        overflow_deleted = 0
+        if max_rows_per_channel is not None:
+            rows = conn.execute(
+                """
+                SELECT id
+                FROM (
+                    SELECT id,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY channel_id
+                               ORDER BY CAST(ts AS REAL) DESC
+                           ) AS rn
+                    FROM slack_messages
+                )
+                WHERE rn > ?
+                """,
+                (max_rows_per_channel,),
+            ).fetchall()
+            overflow_deleted = len(rows)
+            deleted += overflow_deleted
+            if not dry_run and rows:
+                conn.executemany(
+                    "DELETE FROM slack_messages WHERE id = ?",
+                    [(row["id"],) for row in rows],
+                )
+
+        if not dry_run and vacuum:
+            conn.execute("VACUUM")
+
+        remaining = before_rows - deleted if dry_run else _watcher_total_rows(conn)
+        size_after = size_before if dry_run else _watcher_db_size_bytes()
+
+    return json.dumps(
+        {
+            "ok": True,
+            "db_path": _db_path(),
+            "older_than_days": older_than_days,
+            "max_rows_per_channel": max_rows_per_channel,
+            "dry_run": dry_run,
+            "deleted": deleted,
+            "remaining": remaining,
+            "size_bytes_before": size_before,
+            "size_bytes_after": size_after,
+        },
+        ensure_ascii=False,
+    )
+
+
 def _available() -> bool:
     return bool(_env("SLACK_BOT_TOKEN"))
 
@@ -273,6 +394,7 @@ def register(ctx) -> None:
         ("slack_watcher_recent", _watcher_recent, {"type": "object", "properties": {"channel": {"type": "string"}, "since_hours": {"type": "number", "default": 24}, "limit": {"type": "integer", "default": 50}}}, "Read recent local watcher messages."),
         ("slack_watcher_search", _watcher_search, {"type": "object", "properties": {"query": {"type": "string"}, "channel": {"type": "string"}, "since_hours": {"type": "number", "default": 168}, "limit": {"type": "integer", "default": 50}}, "required": ["query"]}, "Search local watcher messages."),
         ("slack_watcher_backfill", _watcher_backfill, {"type": "object", "properties": {"channels": {"type": ["string", "array"]}, "limit": {"type": "integer", "default": 100}, "include_bots": {"type": "boolean", "default": False}}}, "Backfill recent Slack history into watcher SQLite."),
+        ("slack_watcher_prune", _watcher_prune, {"type": "object", "properties": {"older_than_days": {"type": "integer", "default": 30}, "max_rows_per_channel": {"type": "integer"}, "dry_run": {"type": "boolean", "default": False}, "vacuum": {"type": "boolean", "default": True}}}, "Delete old watcher rows and optionally cap rows per channel."),
     ]
     for name, handler, schema, description in tools:
         ctx.register_tool(name=name, toolset="hermes-slack", schema=schema, handler=handler, check_fn=_available if "slack_watcher_" not in name or name == "slack_watcher_backfill" else (lambda: True), requires_env=["SLACK_BOT_TOKEN"] if name in {"slack_list_channels", "slack_channel_history", "slack_search_messages", "slack_watcher_backfill"} else [], description=description, emoji="💬")
