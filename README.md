@@ -4,6 +4,9 @@ A small toolkit for using [Hermes Agent](https://github.com/NousResearch/hermes-
 
 It is meant for a simple setup: Hermes can follow selected channels, keep history in SQLite, and answer only the person who owns the installation.
 
+Support the project:
+[Donate with PayPal](https://paypal.me/DanielLaresNavarro)
+
 What it does:
 
 - listen to selected Slack channels where the bot is invited;
