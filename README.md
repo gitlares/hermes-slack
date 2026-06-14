@@ -1,37 +1,16 @@
 # Hermes Slack Watcher
 
-Community skill and helper scripts for connecting [Hermes Agent](https://github.com/NousResearch/hermes-agent) to Slack as a private, user-gated channel watcher.
+Community Hermes skill plus optional helper tools for connecting [Hermes Agent](https://github.com/NousResearch/hermes-agent) to Slack as a private, user-gated channel watcher.
 
 It lets Hermes:
 
 - listen to selected Slack channels where the bot is invited;
 - only obey one configured owner user;
 - avoid public replies in monitored channels;
-- send owner-only ephemeral responses in the origin channel;
+- send owner-only private Slack responses in the origin channel;
 - copy answers to a private home channel so the conversation can continue;
 - store monitored-channel history in local SQLite for summaries and search;
 - work without requiring Mem0, Obsidian, vector DBs, or any specific memory provider.
-
-## Repository Layout
-
-```text
-setup via Hermes:
-  hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
-
-skill/slack-hermes-watcher/
-  SKILL.md
-  scripts/
-    setup_wizard.py
-    slack_manifest.py
-    configure_env.py
-    install_plugin.py
-    patch_runtime.py
-  references/
-    slack_api_plugin.py
-    slack_api_plugin.yaml
-    slack-app-setup.md
-    hermes-runtime-behavior.md
-```
 
 ## Install The Skill
 
@@ -41,131 +20,57 @@ Install through Hermes' standard skill installer:
 hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
 ```
 
-Then run the guided setup script from the installed skill directory:
+This installs the safe skill bundle only. Hermes community skill scanning blocks bundles that contain token-handling scripts or privileged restart commands, so automation helpers live outside the installed skill.
 
-```bash
-python ~/.hermes/skills/slack-hermes-watcher/scripts/setup_wizard.py
+After installing, ask Hermes:
+
+```text
+Use slack-hermes-watcher to configure Slack supervision.
 ```
 
-If you installed into a category, adjust the path, for example:
+The skill will guide the full process: Slack App creation, owner user ID, private home channel, monitored channels, watcher tools, SQLite history, memory policy, validation, and troubleshooting.
 
-```bash
-python ~/.hermes/skills/community/slack-hermes-watcher/scripts/setup_wizard.py
-```
+## Optional Helper Tools
 
-The wizard generates a Slack manifest, waits for you to create/install the Slack app, asks for the Slack tokens, resolves your owner user ID and channels, configures Hermes, installs the watcher plugin, applies supported runtime patches, and offers to restart `hermes-gateway`.
-
-If you prefer manual setup, use the steps below.
-
-## Manual Setup
-
-Clone this repository only if you want to inspect or modify the source:
+If you want guided automation after installing the skill, clone this repo and run the external helper:
 
 ```bash
 git clone git@github.com:gitlares/hermes-slack.git
 cd hermes-slack
+python tools/setup_wizard.py
 ```
 
-Generate a Slack manifest:
+The helper generates a Slack manifest, asks for tokens locally, resolves user/channel names, configures Hermes, installs the companion plugin, applies supported runtime patches, validates imports, and offers to restart `hermes-gateway`.
 
-```bash
-python skill/slack-hermes-watcher/scripts/slack_manifest.py --name Hermes > slack-manifest.json
-```
+The helper is intentionally outside the installed skill bundle because it handles secrets and local runtime changes.
 
-Create a Slack App from that manifest, enable Socket Mode, install the app, and collect:
-
-- `SLACK_BOT_TOKEN` (`xoxb-...`)
-- `SLACK_APP_TOKEN` (`xapp-...`)
-
-Configure Hermes:
-
-```bash
-python skill/slack-hermes-watcher/scripts/configure_env.py \
-  --env ~/.hermes/.env \
-  --bot-token "$SLACK_BOT_TOKEN" \
-  --app-token "$SLACK_APP_TOKEN" \
-  --owner "@Your Name" \
-  --home "#your-private-hermes-channel" \
-  --watch "#channel-a,#channel-b"
-```
-
-Install the Hermes plugin:
-
-```bash
-python skill/slack-hermes-watcher/scripts/install_plugin.py \
-  --hermes-root ~/.hermes/hermes-agent
-```
-
-Patch supported Hermes runtime layouts:
-
-```bash
-python skill/slack-hermes-watcher/scripts/patch_runtime.py \
-  --hermes-root ~/.hermes/hermes-agent
-```
-
-Restart Hermes:
-
-```bash
-sudo systemctl restart hermes-gateway
-```
-
-Backfill recent Slack history:
+## Repository Layout
 
 ```text
-Ask Hermes to run slack_watcher_backfill for the configured channels.
+skill/slack-hermes-watcher/
+  SKILL.md
+  references/
+    slack-app-setup.md
+    slack-manifest-template.md
+
+plugin/slack_api/
+  __init__.py
+  plugin.yaml
+
+tools/
+  setup_wizard.py
+  slack_manifest.py
+  configure_env.py
+  install_plugin.py
+  patch_runtime.py
+
+docs/
+  hermes-runtime-behavior.md
 ```
 
-## What The Installer Configures
+## Companion Plugin Tools
 
-The installer writes these local Hermes environment values:
-
-- `SLACK_BOT_TOKEN`
-- `SLACK_APP_TOKEN`
-- `SLACK_ALLOWED_USERS`
-- `SLACK_HOME_CHANNEL`
-- `SLACK_HOME_CHANNEL_NAME`
-- `SLACK_FREE_RESPONSE_CHANNELS`
-- `SLACK_REQUIRE_MENTION=true`
-- `SLACK_STRICT_MENTION=false`
-- `SLACK_ALLOW_BOTS=false`
-- `SLACK_WATCH_CHANNELS`
-- `SLACK_WATCHER_DB_PATH`
-
-It does not commit, upload, or transmit tokens anywhere except Slack API calls needed to resolve user/channel names.
-
-## Slack App Requirements
-
-Bot scopes:
-
-- `app_mentions:read`
-- `assistant:write`
-- `channels:history`
-- `channels:read`
-- `chat:write`
-- `commands`
-- `files:read`
-- `files:write`
-- `groups:history`
-- `groups:read`
-- `im:history`
-- `im:read`
-- `im:write`
-- `users:read`
-
-Events:
-
-- `app_mention`
-- `message.channels`
-- `message.groups`
-- `message.im`
-
-App-level token scope:
-
-- `connections:write`
-
-## Watcher Tools
-
-The bundled Hermes plugin exposes:
+The optional `slack_api` Hermes plugin exposes:
 
 - `slack_list_channels`
 - `slack_channel_history`
@@ -175,14 +80,8 @@ The bundled Hermes plugin exposes:
 - `slack_watcher_search`
 - `slack_watcher_backfill`
 
-## Memory Model
-
-The watcher stores Slack history in SQLite. It does not require a long-term memory provider.
-
-Use long-term memory only for durable facts the owner explicitly wants to remember.
-
 ## Security Notes
 
 Never commit `.env`, Slack tokens, SQLite databases, or local Hermes configs.
 
-This project is designed around owner-only activation. Review generated config before running it on a shared workspace.
+The installed skill does not contain token-handling scripts. External helper tools operate locally and should be reviewed before use.

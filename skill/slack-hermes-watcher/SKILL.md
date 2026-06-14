@@ -1,53 +1,50 @@
 ---
 name: slack-hermes-watcher
-description: Configure a Slack app and Hermes integration for private, user-gated Slack supervision. Use when setting up Hermes to listen to invited Slack channels, identify the owner's Slack user ID, configure a private home channel, store monitored-channel history in SQLite, expose watcher search/summary tools, or package this workflow for reusable/community installation without requiring Mem0 or any specific memory provider.
+description: Guide Hermes through configuring private, user-gated Slack channel supervision. Use when a user wants Hermes to listen to selected Slack channels, identify the owner's Slack user ID, choose a private home channel, configure monitored channels, install Slack watcher tools, store channel history in SQLite, and define memory rules without requiring Mem0 or any specific memory provider.
 ---
 
 # Slack Hermes Watcher
 
 ## Goal
 
-Set up Hermes as a Slack listener that can supervise selected channels without speaking publicly:
+Help the user set up Hermes as a Slack listener that can supervise selected channels without speaking publicly.
+
+Target behavior:
 
 - Only the configured owner can activate Hermes.
 - Normal conversation happens in a private home channel.
-- Mentions in monitored channels produce an ephemeral response visible only to the owner, plus a copy in the home channel.
-- Passive channel history is stored in local SQLite for later summaries/searches.
-- Long-term memory is optional; do not require Mem0, Obsidian, vector DBs, or any provider-specific memory.
+- Mentions in monitored channels produce a private owner-only Slack response and a copy in the home channel.
+- Monitored channel history is stored locally in SQLite for summaries/searches.
+- Long-term memory is optional and provider-agnostic.
 
-## Workflow
+## Installation Rule
 
-Install this skill through Hermes first:
+This skill must be installed through Hermes' normal skill installer. Do not present root-level repo scripts as the primary installation path.
+
+Canonical install identifier:
 
 ```bash
 hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
 ```
 
-After the skill is installed, prefer the bundled guided setup:
+After installation, guide the user through the setup. If they want automation, use the helper scripts from the public repository as optional external tooling, not as part of the installed skill bundle.
 
-```bash
-python ~/.hermes/skills/slack-hermes-watcher/scripts/setup_wizard.py
-```
+## Setup Workflow
 
-Use the manual workflow below when installing from the skill folder only, patching an existing deployment, or debugging.
+1. Create the Slack App.
+2. Enable Socket Mode.
+3. Install the app to the Slack workspace.
+4. Collect the Slack bot token and app token from the user without storing or displaying them unnecessarily.
+5. Resolve the owner's Slack user ID.
+6. Resolve the private Hermes home channel ID.
+7. Resolve monitored channel IDs.
+8. Configure Hermes Slack environment and channel policy.
+9. Install or update the Slack watcher plugin.
+10. Verify runtime behavior.
+11. Backfill recent channel history.
+12. Test summary/search requests.
 
-1. Create or update the Slack App.
-2. Install the app to the workspace and collect tokens.
-3. Resolve owner `user_id`, home channel ID, and monitored channel IDs.
-4. Configure Hermes `.env` and `config.yaml`.
-5. Install the `slack_api` watcher tools plugin.
-6. Patch or verify Hermes Slack adapter behavior for passive SQLite capture and private Slack delivery.
-7. Backfill recent channel history and test.
-
-## Slack App Setup
-
-Use `scripts/slack_manifest.py` to generate a Slack manifest:
-
-```bash
-python scripts/slack_manifest.py --name Hermes
-```
-
-Read `references/slack-app-setup.md` when the user needs step-by-step Slack UI guidance.
+## Slack App Requirements
 
 Required bot scopes:
 
@@ -66,54 +63,47 @@ Required bot scopes:
 - `im:write`
 - `users:read`
 
-Required bot events:
+Required events:
 
 - `app_mention`
 - `message.channels`
 - `message.groups`
 - `message.im`
 
-Socket Mode must be enabled and an app-level token with `connections:write` is required.
+Socket Mode requires an app-level token with:
 
-## Configuration
+- `connections:write`
 
-Use `scripts/configure_env.py` to update Hermes `.env` safely:
+Read `references/slack-app-setup.md` when the user needs Slack UI guidance.
+Use `references/slack-manifest-template.md` when the user needs a manifest to paste into Slack.
 
-```bash
-python scripts/configure_env.py \
-  --env ~/.hermes/.env \
-  --bot-token "$SLACK_BOT_TOKEN" \
-  --app-token "$SLACK_APP_TOKEN" \
-  --owner "@Your Name" \
-  --home "#your-private-hermes-channel" \
-  --watch "#channel-a,#channel-b"
-```
+## Configuration Values To Collect
 
-The script resolves Slack names to IDs when given a bot token. It writes:
+Collect these values:
 
-- `SLACK_BOT_TOKEN`
-- `SLACK_APP_TOKEN`
-- `SLACK_ALLOWED_USERS`
-- `SLACK_HOME_CHANNEL`
-- `SLACK_HOME_CHANNEL_NAME`
-- `SLACK_FREE_RESPONSE_CHANNELS`
-- `SLACK_REQUIRE_MENTION=true`
-- `SLACK_STRICT_MENTION=false`
-- `SLACK_ALLOW_BOTS=false`
-- `SLACK_WATCH_CHANNELS`
-- `SLACK_WATCHER_DB_PATH`
+- Slack bot token.
+- Slack app-level token.
+- Owner Slack user ID.
+- Private Hermes home channel ID.
+- Monitored channel IDs.
+- Local SQLite watcher database location.
 
-If names cannot be resolved, ask the user to provide raw IDs.
+Use Slack API lookups or Slack UI instructions to help the user find IDs. Avoid hardcoding personal IDs in reusable documentation.
+
+## Runtime Policy
+
+Configure Hermes so Slack behaves as follows:
+
+- In the home channel, reply normally.
+- In monitored channels, listen and store messages passively.
+- In monitored channels, never post public normal replies.
+- If the owner mentions Hermes outside the home channel, respond privately in that channel and copy the full answer to the home channel.
+- Ignore non-owner activation attempts.
+- Keep other Hermes channels such as WebUI or WhatsApp unaffected.
 
 ## Watcher Tools
 
-Install the bundled watcher plugin:
-
-```bash
-python scripts/install_plugin.py --hermes-root ~/.hermes/hermes-agent
-```
-
-This installs a Hermes plugin with tools:
+The companion Slack watcher plugin should expose:
 
 - `slack_list_channels`
 - `slack_channel_history`
@@ -123,64 +113,36 @@ This installs a Hermes plugin with tools:
 - `slack_watcher_search`
 - `slack_watcher_backfill`
 
-Use `slack_watcher_recent` and `slack_watcher_search` for monitored-channel summaries. Use `slack_channel_history` only for direct Slack API reads when the local SQLite watcher does not have enough history.
-
-## Runtime Behavior
-
-Configure the gateway so Slack works this way:
-
-- In the home channel: respond normally.
-- In monitored channels: listen and store messages passively.
-- If owner mentions Hermes outside home: send an ephemeral response in that channel and copy the full answer to home.
-- If anyone other than owner mentions Hermes: ignore.
-- Do not post public replies in monitored channels.
-
-Read `references/hermes-runtime-behavior.md` before patching Hermes internals. Hermes versions differ, so inspect current files before applying patches.
-
-For known Hermes source layouts, use the bundled best-effort patcher:
-
-```bash
-python scripts/patch_runtime.py --hermes-root ~/.hermes/hermes-agent
-```
-
-Then validate imports and restart:
-
-```bash
-cd ~/.hermes/hermes-agent
-PYTHONDONTWRITEBYTECODE=1 venv/bin/python - <<'PY'
-import gateway.platforms.slack
-import gateway.session
-print("ok")
-PY
-sudo systemctl restart hermes-gateway
-```
+Use watcher tools for monitored-channel summaries because they read SQLite history without filling the prompt context.
 
 ## Memory Policy
 
 SQLite is the source of truth for monitored Slack history.
 
-Do not put every Slack message into long-term memory. Promote only durable facts when the owner asks to remember them or when the owner confirms an extracted item is important.
+Do not put every Slack message into long-term memory. Promote only durable facts when the owner asks to remember them or confirms an extracted item is important.
 
 Accept any long-term memory system:
 
-- Mem0
-- Obsidian/vault files
-- SQLite task tables
-- custom MCP memory
-- no memory provider
+- Mem0.
+- Obsidian or vault files.
+- SQLite task tables.
+- custom MCP memory.
+- no long-term memory provider.
 
-The watcher must remain useful with SQLite alone.
+The Slack watcher must remain useful with SQLite alone.
 
 ## Validation
 
 After setup:
 
-1. Run `slack_list_channels` and confirm the home and monitored channels are visible.
-2. Run `slack_watcher_backfill` for configured channels.
-3. Run `slack_watcher_channels` and verify message counts.
-4. Mention Hermes from a monitored channel as the owner.
-5. Confirm the monitored channel gets only an ephemeral response.
-6. Confirm the private home channel receives the copied answer.
-7. Ask from home: “resúmeme lo importante de #canal hoy”.
+1. Confirm Hermes can list Slack channels visible to the bot.
+2. Confirm the home channel and monitored channels resolve to IDs.
+3. Confirm the watcher database receives new messages from monitored channels.
+4. Backfill recent history.
+5. Ask for a summary of a monitored channel.
+6. Mention Hermes from a monitored channel as the owner.
+7. Confirm the origin channel receives only a private owner-visible response.
+8. Confirm the private home channel receives the copied answer.
+9. Confirm another Slack user cannot activate Hermes.
 
-If Hermes says it cannot access Slack, verify the watcher tools are registered and clear old Slack sessions that may contain stale context.
+If Hermes says it cannot access Slack after tools are installed, verify tools are registered and clear stale Slack sessions that may contain old context.

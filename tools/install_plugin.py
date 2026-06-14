@@ -13,9 +13,9 @@ def main() -> None:
     parser.add_argument("--hermes-root", default="~/.hermes/hermes-agent")
     args = parser.parse_args()
 
-    skill_root = Path(__file__).resolve().parents[1]
-    src_py = skill_root / "references" / "slack_api_plugin.py"
-    src_yaml = skill_root / "references" / "slack_api_plugin.yaml"
+    repo_root = Path(__file__).resolve().parents[1]
+    src_py = repo_root / "plugin" / "slack_api" / "__init__.py"
+    src_yaml = repo_root / "plugin" / "slack_api" / "plugin.yaml"
     hermes_root = Path(args.hermes_root).expanduser()
     dest = hermes_root / "plugins" / "slack_api"
     dest.mkdir(parents=True, exist_ok=True)

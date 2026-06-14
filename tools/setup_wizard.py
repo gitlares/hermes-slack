@@ -10,7 +10,8 @@ import sys
 from pathlib import Path
 
 
-SKILL = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+TOOLS = ROOT / "tools"
 
 
 def redact_cmd(cmd: list[str]) -> list[str]:
@@ -77,7 +78,7 @@ def main() -> None:
 
     manifest_path = Path.cwd() / "slack-manifest.generated.json"
     manifest = subprocess.check_output(
-        [sys.executable, str(SKILL / "scripts" / "slack_manifest.py"), "--name", "Hermes"],
+        [sys.executable, str(TOOLS / "slack_manifest.py"), "--name", "Hermes"],
         text=True,
     )
     manifest_path.write_text(manifest)
@@ -112,7 +113,7 @@ def main() -> None:
 
     run([
         sys.executable,
-        str(SKILL / "scripts" / "configure_env.py"),
+        str(TOOLS / "configure_env.py"),
         "--env",
         str(env_path),
         "--bot-token",
@@ -129,7 +130,7 @@ def main() -> None:
 
     run([
         sys.executable,
-        str(SKILL / "scripts" / "install_plugin.py"),
+        str(TOOLS / "install_plugin.py"),
         "--hermes-root",
         str(hermes_root),
     ])
@@ -137,7 +138,7 @@ def main() -> None:
     if not args.skip_runtime_patch:
         run([
             sys.executable,
-            str(SKILL / "scripts" / "patch_runtime.py"),
+            str(TOOLS / "patch_runtime.py"),
             "--hermes-root",
             str(hermes_root),
         ])
