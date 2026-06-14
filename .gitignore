@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+.env
+*.sqlite
+*.sqlite3
+*.db
+slack-manifest.local.json
+dist/
+build/

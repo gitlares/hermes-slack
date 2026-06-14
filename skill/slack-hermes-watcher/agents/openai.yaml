@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slack Hermes Watcher"
+  short_description: "Configura Slack + Hermes para supervisar canales con SQLite."
+  default_prompt: "Configura un watcher de Slack para Hermes que escuche canales, use mensajes efímeros y guarde historial en SQLite."

@@ -1,0 +1,15 @@
+name: slack-api
+version: 1.1.0
+description: "Slack tools for Hermes: list/read/search Slack and query a local passive SQLite watcher."
+author: Hermes community
+kind: backend
+provides_tools:
+  - slack_list_channels
+  - slack_channel_history
+  - slack_search_messages
+  - slack_watcher_channels
+  - slack_watcher_recent
+  - slack_watcher_search
+  - slack_watcher_backfill
+requires_env:
+  - SLACK_BOT_TOKEN
