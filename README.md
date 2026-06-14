@@ -15,9 +15,13 @@ It lets Hermes:
 ## Repository Layout
 
 ```text
+setup via Hermes:
+  hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+
 skill/slack-hermes-watcher/
   SKILL.md
   scripts/
+    setup_wizard.py
     slack_manifest.py
     configure_env.py
     install_plugin.py
@@ -29,26 +33,38 @@ skill/slack-hermes-watcher/
     hermes-runtime-behavior.md
 ```
 
-## Quick Start
+## Install The Skill
 
-Clone this repository:
+Install through Hermes' standard skill installer:
+
+```bash
+hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+```
+
+Then run the guided setup script from the installed skill directory:
+
+```bash
+python ~/.hermes/skills/slack-hermes-watcher/scripts/setup_wizard.py
+```
+
+If you installed into a category, adjust the path, for example:
+
+```bash
+python ~/.hermes/skills/community/slack-hermes-watcher/scripts/setup_wizard.py
+```
+
+The wizard generates a Slack manifest, waits for you to create/install the Slack app, asks for the Slack tokens, resolves your owner user ID and channels, configures Hermes, installs the watcher plugin, applies supported runtime patches, and offers to restart `hermes-gateway`.
+
+If you prefer manual setup, use the steps below.
+
+## Manual Setup
+
+Clone this repository only if you want to inspect or modify the source:
 
 ```bash
 git clone git@github.com:gitlares/hermes-slack.git
 cd hermes-slack
 ```
-
-Run the guided installer:
-
-```bash
-python setup.py
-```
-
-The installer generates a Slack manifest, waits for you to create/install the Slack app, asks for the Slack tokens, resolves your owner user ID and channels, configures Hermes, installs the watcher plugin, applies supported runtime patches, and offers to restart `hermes-gateway`.
-
-If you prefer manual setup, use the steps below.
-
-## Manual Setup
 
 Generate a Slack manifest:
 

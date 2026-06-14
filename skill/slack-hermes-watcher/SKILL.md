@@ -17,10 +17,16 @@ Set up Hermes as a Slack listener that can supervise selected channels without s
 
 ## Workflow
 
-Prefer the repository-level guided installer when available:
+Install this skill through Hermes first:
 
 ```bash
-python setup.py
+hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+```
+
+After the skill is installed, prefer the bundled guided setup:
+
+```bash
+python ~/.hermes/skills/slack-hermes-watcher/scripts/setup_wizard.py
 ```
 
 Use the manual workflow below when installing from the skill folder only, patching an existing deployment, or debugging.
@@ -79,8 +85,8 @@ python scripts/configure_env.py \
   --bot-token "$SLACK_BOT_TOKEN" \
   --app-token "$SLACK_APP_TOKEN" \
   --owner "@Your Name" \
-  --home "#asistente-hermes" \
-  --watch "#balam,#erp-desarrollo"
+  --home "#your-private-hermes-channel" \
+  --watch "#channel-a,#channel-b"
 ```
 
 The script resolves Slack names to IDs when given a bot token. It writes:

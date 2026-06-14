@@ -10,8 +10,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent
-SKILL = ROOT / "skill" / "slack-hermes-watcher"
+SKILL = Path(__file__).resolve().parents[1]
 
 
 def redact_cmd(cmd: list[str]) -> list[str]:
@@ -76,7 +75,7 @@ def main() -> None:
     print("This installer does not send or store tokens anywhere except your local Hermes .env file.")
     print()
 
-    manifest_path = ROOT / "slack-manifest.generated.json"
+    manifest_path = Path.cwd() / "slack-manifest.generated.json"
     manifest = subprocess.check_output(
         [sys.executable, str(SKILL / "scripts" / "slack_manifest.py"), "--name", "Hermes"],
         text=True,
@@ -87,7 +86,7 @@ def main() -> None:
     print("Required tokens: SLACK_BOT_TOKEN (xoxb-...) and SLACK_APP_TOKEN (xapp-...).")
 
     if not args.non_interactive and not yes("Continue after creating/installing the Slack app?", True):
-        print("Stop here. Re-run setup.py after creating the Slack app.")
+        print("Stop here. Re-run setup_wizard.py after creating the Slack app.")
         return
 
     bot_token = args.bot_token
