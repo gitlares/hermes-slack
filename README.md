@@ -161,12 +161,6 @@ The install path was smoke-tested from a clean environment:
 - `hermes skills inspect gitlares/hermes-slack/skills/slack-hermes-watcher`
 - `hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes`
 
-For anyone following older examples, the legacy path still resolves:
-
-```bash
-hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
-```
-
 That test confirmed the community bundle is accepted as safe and installs the expected files.
 
 ## Retention
