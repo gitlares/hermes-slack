@@ -124,6 +124,9 @@ The optional `slack_api` Hermes plugin exposes:
 
 - the skill installs through Hermes' normal skill installer;
 - the installed bundle is accepted as safe;
+- the public install path was tested in a clean temporary Ubuntu-based container on a separate machine;
+- `hermes skills inspect gitlares/hermes-slack/skill/slack-hermes-watcher` works from a fresh Hermes install;
+- `hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes` completes successfully from a fresh Hermes install;
 - the watcher plugin exposes the expected Slack and SQLite tools;
 - the repo includes helper tooling for local setup and runtime patching;
 - the prune workflow is available so the SQLite watcher does not grow forever.
@@ -149,6 +152,16 @@ git clone git@github.com:gitlares/hermes-slack.git
 cd hermes-slack
 python tools/setup_wizard.py
 ```
+
+## Validation notes
+
+The install path was smoke-tested from a clean environment:
+
+- fresh Hermes install in a temporary container
+- `hermes skills inspect gitlares/hermes-slack/skill/slack-hermes-watcher`
+- `hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes`
+
+That test confirmed the community bundle is accepted as safe and installs the expected files.
 
 ## Retention
 
