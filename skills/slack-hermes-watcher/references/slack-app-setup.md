@@ -1,0 +1,50 @@
+# Slack App Setup
+
+Use this when the user needs help creating the Slack App from the UI.
+
+## Create App
+
+1. Open [api.slack.com/apps](https://api.slack.com/apps).
+2. Click **Create New App**.
+3. Choose **From an app manifest**.
+4. Pick the workspace.
+5. Paste the manifest from `references/slack-manifest-template.md`, adjusting the app name if needed.
+6. Create the app.
+
+## App-Level Token
+
+1. Go to **Basic Information**.
+2. Under **App-Level Tokens**, click **Generate Token and Scopes**.
+3. Name it `hermes-socket`.
+4. Add `connections:write`.
+5. Save the token as `SLACK_APP_TOKEN`.
+
+## Bot Token
+
+1. Go to **OAuth & Permissions**.
+2. Click **Install to Workspace** or **Reinstall to Workspace**.
+3. Copy **Bot User OAuth Token**.
+4. Save it as `SLACK_BOT_TOKEN`.
+
+## Invite Bot To Channels
+
+In each Slack channel to monitor:
+
+```text
+/invite @Hermes
+```
+
+For private channels, the bot cannot read history until invited.
+
+## Find IDs
+
+If using the optional external helper from the repository, it can resolve names to IDs automatically.
+
+Manual fallback:
+
+- User ID: Slack profile menu → Copy member ID.
+- Channel ID: open channel details → About → Copy channel ID, or copy link and extract the `C...`/`G...` ID.
+
+## Reinstall Requirement
+
+After changing OAuth scopes or event subscriptions, reinstall the app to the workspace.

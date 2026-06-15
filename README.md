@@ -31,7 +31,7 @@ What it does:
 1. Install the skill:
 
 ```bash
-hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes
 ```
 
 2. In Hermes, ask:
@@ -56,7 +56,7 @@ Use slack-hermes-watcher to configure Slack supervision.
 Install through Hermes' standard skill installer:
 
 ```bash
-hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes
 ```
 
 This installs only the safe skill bundle. Hermes blocks community skills that handle secrets or local runtime changes, so the setup helpers stay outside the installed skill.
@@ -86,7 +86,7 @@ It stays outside the installed skill bundle because it touches secrets and local
 ## Layout
 
 ```text
-skill/slack-hermes-watcher/
+skills/slack-hermes-watcher/
   SKILL.md
   references/
     slack-app-setup.md
@@ -125,8 +125,8 @@ The optional `slack_api` Hermes plugin exposes:
 - the skill installs through Hermes' normal skill installer;
 - the installed bundle is accepted as safe;
 - the public install path was tested in a clean temporary Ubuntu-based container on a separate machine;
-- `hermes skills inspect gitlares/hermes-slack/skill/slack-hermes-watcher` works from a fresh Hermes install;
-- `hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes` completes successfully from a fresh Hermes install;
+- `hermes skills inspect gitlares/hermes-slack/skills/slack-hermes-watcher` works from a fresh Hermes install;
+- `hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes` completes successfully from a fresh Hermes install;
 - the watcher plugin exposes the expected Slack and SQLite tools;
 - the repo includes helper tooling for local setup and runtime patching;
 - the prune workflow is available so the SQLite watcher does not grow forever.
@@ -142,7 +142,7 @@ The optional `slack_api` Hermes plugin exposes:
 Main install command:
 
 ```bash
-hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes
 ```
 
 Optional guided helper:
@@ -158,8 +158,8 @@ python tools/setup_wizard.py
 The install path was smoke-tested from a clean environment:
 
 - fresh Hermes install in a temporary container
-- `hermes skills inspect gitlares/hermes-slack/skill/slack-hermes-watcher`
-- `hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes`
+- `hermes skills inspect gitlares/hermes-slack/skills/slack-hermes-watcher`
+- `hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes`
 
 That test confirmed the community bundle is accepted as safe and installs the expected files.
 

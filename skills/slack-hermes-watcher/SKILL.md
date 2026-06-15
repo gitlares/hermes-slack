@@ -24,7 +24,7 @@ This skill must be installed through Hermes' normal skill installer. Do not pres
 Canonical install identifier:
 
 ```bash
-hermes skills install gitlares/hermes-slack/skill/slack-hermes-watcher --yes
+hermes skills install gitlares/hermes-slack/skills/slack-hermes-watcher --yes
 ```
 
 After installation, guide the user through the setup. If they want automation, use the helper scripts from the public repository as optional external tooling, not as part of the installed skill bundle.
